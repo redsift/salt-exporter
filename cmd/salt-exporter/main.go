@@ -69,6 +69,9 @@ func start(config Config) {
 
 		go pkiWatcher.StartWatching()
 	}
+
+	eventListener.Open()
+
 	go eventListener.ListenEvents()
 	go metrics.ExposeMetrics(ctx, eventChan, watchChan, config.Metrics)
 

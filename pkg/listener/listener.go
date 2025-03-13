@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/kpetremann/salt-exporter/pkg/event"
@@ -35,6 +36,8 @@ type EventListener struct {
 	decoder *msgpack.Decoder
 
 	eventParser eventParser
+
+	mt sync.Mutex
 }
 
 // Open opens the salt-master event bus.
@@ -53,11 +56,14 @@ func (e *EventListener) Open() {
 		if err != nil {
 			log.Error().Msg("failed to connect to event bus, retrying in 5 seconds")
 			time.Sleep(time.Second * 5)
-		} else {
-			log.Info().Msg("successfully connected to event bus")
-			e.decoder = msgpack.NewDecoder(e.saltEventBus)
-			return
+			continue
 		}
+		e.mt.Lock()
+		defer e.mt.Unlock()
+		log.Info().Msg("successfully connected to event bus")
+		e.decoder = msgpack.NewDecoder(e.saltEventBus)
+		return
+
 	}
 }
 
@@ -91,6 +97,7 @@ func NewEventListener(ctx context.Context, eventParser eventParser, eventChan ch
 		eventChan:   eventChan,
 		eventParser: eventParser,
 		iPCFilepath: DefaultIPCFilepath,
+		mt:          sync.Mutex{},
 	}
 	return &e
 }
@@ -106,16 +113,18 @@ func (e *EventListener) SetIPCFilepath(filepath string) {
 
 // ListenEvents listens to the salt-master event bus and sends events to the event channel.
 func (e *EventListener) ListenEvents() {
-	e.Open()
-
 	for {
 		select {
 		case <-e.ctx.Done():
 			log.Info().Msg("stop listening events")
+			e.mt.Lock()
 			e.Close()
+			e.mt.Unlock()
 			return
 		default:
+			e.mt.Lock()
 			message, err := e.decoder.DecodeMap()
+			e.mt.Unlock()
 			if err != nil {
 				log.Error().Str("error", err.Error()).Msg("unable to read event")
 				log.Error().Msg("event bus may be closed, trying to reconnect")
