@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,7 +17,7 @@ type eventParser interface {
 	Parse(message map[string]interface{}) (event.SaltEvent, error)
 }
 
-const DefaultIPCFilepath = "/var/run/salt/master/master_event_pub.ipc"
+const DefaultIPCFilepath = "unix:///var/run/salt/master/master_event_pub.ipc"
 
 // EventListener listens to the salt-master event bus and sends events to the event channel.
 type EventListener struct {
@@ -26,8 +27,8 @@ type EventListener struct {
 	// eventChan is the channel to send events to
 	eventChan chan event.SaltEvent
 
-	// iPCFilepath is filepath to the salt-master event bus
-	iPCFilepath string
+	// iPC is the endpoint to the salt-master event bus
+	iPC string
 
 	// saltEventBus keeps the connection to the salt-master event bus
 	saltEventBus net.Conn
@@ -42,8 +43,16 @@ type EventListener struct {
 
 // Open opens the salt-master event bus.
 func (e *EventListener) Open() {
-	log.Info().Str("file", e.iPCFilepath).Msg("connecting to salt-master event bus")
+	log.Info().Str("endpoint", e.iPC).Msg("connecting to salt-master event bus")
 	var err error
+	var scheme string
+
+	if strings.HasPrefix(e.iPC, "tcp://") {
+		scheme = "tcp"
+	} else {
+		scheme = "unix"
+	}
+	address := strings.TrimPrefix(e.iPC, scheme+"://")
 
 	for {
 		select {
@@ -52,7 +61,7 @@ func (e *EventListener) Open() {
 		default:
 		}
 
-		e.saltEventBus, err = net.Dial("unix", e.iPCFilepath)
+		e.saltEventBus, err = net.Dial(scheme, address)
 		if err != nil {
 			log.Error().Msg("failed to connect to event bus, retrying in 5 seconds")
 			time.Sleep(time.Second * 5)
@@ -63,7 +72,6 @@ func (e *EventListener) Open() {
 		log.Info().Msg("successfully connected to event bus")
 		e.decoder = msgpack.NewDecoder(e.saltEventBus)
 		return
-
 	}
 }
 
@@ -96,19 +104,19 @@ func NewEventListener(ctx context.Context, eventParser eventParser, eventChan ch
 		ctx:         ctx,
 		eventChan:   eventChan,
 		eventParser: eventParser,
-		iPCFilepath: DefaultIPCFilepath,
+		iPC:         DefaultIPCFilepath,
 		mt:          sync.Mutex{},
 	}
 	return &e
 }
 
-// SetIPCFilepath sets the filepath to the salt-master event bus
+// SetIPC sets the endpoint to the salt-master event bus
 //
 // The IPC file must be readable by the user running the exporter.
 //
 // Default: /var/run/salt/master/master_event_pub.ipc.
-func (e *EventListener) SetIPCFilepath(filepath string) {
-	e.iPCFilepath = filepath
+func (e *EventListener) SetIPC(endpoint string) {
+	e.iPC = endpoint
 }
 
 // ListenEvents listens to the salt-master event bus and sends events to the event channel.

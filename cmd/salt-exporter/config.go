@@ -38,7 +38,7 @@ type Config struct {
 
 	ListenAddress string `mapstructure:"listen-address"`
 	ListenPort    int    `mapstructure:"listen-port"`
-	IPCFile       string `mapstructure:"ipc-file"`
+	IPC           string `mapstructure:"ipc"`
 	PKIDir        string `mapstructure:"pki-dir"`
 	TLS           struct {
 		Enabled     bool
@@ -56,7 +56,7 @@ func parseFlags() (string, bool) {
 	flag.String("log-level", defaultLogLevel, "log level (debug, info, warn, error, fatal, panic, disabled)")
 	flag.String("host", "", "listen address")
 	flag.Int("port", defaultPort, "listen port")
-	flag.String("ipc-file", listener.DefaultIPCFilepath, "file location of the salt-master event bus")
+	flag.String("ipc", listener.DefaultIPCFilepath, "address of the salt-master event bus. Be sure to specify the type (tpc:// or unix://)")
 	flag.Bool("tls", false, "enable TLS")
 	flag.String("tls-cert", "", "TLS certificated")
 	flag.String("tls-key", "", "TLS private key")
@@ -88,7 +88,7 @@ func parseFlags() (string, bool) {
 func setDefaults(healthMinions bool) {
 	viper.SetDefault("log-level", defaultLogLevel)
 	viper.SetDefault("listen-port", defaultPort)
-	viper.SetDefault("ipc-file", listener.DefaultIPCFilepath)
+	viper.SetDefault("ipc", listener.DefaultIPCFilepath)
 	viper.SetDefault("pki-dir", listener.DefaultPKIDirpath)
 	viper.SetDefault("metrics.health-minions", defaultHealthMinion)
 	viper.SetDefault("metrics.salt_new_job_total.enabled", true)

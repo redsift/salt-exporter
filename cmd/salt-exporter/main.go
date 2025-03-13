@@ -59,7 +59,7 @@ func start(config Config) {
 	// listen and expose metric
 	parser := parser.NewEventParser(false)
 	eventListener := listener.NewEventListener(ctx, parser, eventChan)
-	eventListener.SetIPCFilepath(config.IPCFile)
+	eventListener.SetIPC(config.IPC)
 
 	if config.Metrics.HealthMinions {
 		pkiWatcher, err := listener.NewPKIWatcher(ctx, config.PKIDir, watchChan)

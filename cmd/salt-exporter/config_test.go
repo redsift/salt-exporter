@@ -27,7 +27,7 @@ func TestReadConfigFlagOnly(t *testing.T) {
 				LogLevel:      defaultLogLevel,
 				ListenAddress: "127.0.0.1",
 				ListenPort:    8080,
-				IPCFile:       listener.DefaultIPCFilepath,
+				IPC:           listener.DefaultIPCFilepath,
 				PKIDir:        listener.DefaultPKIDirpath,
 				TLS: struct {
 					Enabled     bool
@@ -105,7 +105,7 @@ func TestReadConfigFlagOnly(t *testing.T) {
 			flags: []string{
 				"-host=127.0.0.1",
 				"-port=8080",
-				"-ipc-file=/dev/null",
+				"-ipc=/dev/null",
 				"-health-minions=false",
 				"-health-functions-filter=test.sls",
 				"-health-states-filter=nop",
@@ -119,7 +119,7 @@ func TestReadConfigFlagOnly(t *testing.T) {
 				LogLevel:      defaultLogLevel,
 				ListenAddress: "127.0.0.1",
 				ListenPort:    8080,
-				IPCFile:       "/dev/null",
+				IPC:           "/dev/null",
 				PKIDir:        "/etc/salt/pki/master",
 				TLS: struct {
 					Enabled     bool
@@ -246,7 +246,7 @@ func TestConfigFileOnly(t *testing.T) {
 		LogLevel:      "info",
 		ListenAddress: "127.0.0.1",
 		ListenPort:    2113,
-		IPCFile:       "/dev/null",
+		IPC:           "/dev/null",
 		PKIDir:        "/tmp/pki",
 		TLS: struct {
 			Enabled     bool
@@ -346,7 +346,7 @@ func TestConfigFileWithFlags(t *testing.T) {
 		"-health-functions-filter=test.sls",
 		"-health-states-filter=nop",
 		"-ignore-mock",
-		"-ipc-file=/somewhere",
+		"-ipc=/somewhere",
 	}
 
 	os.Args = append([]string{name}, flags...)
@@ -358,7 +358,7 @@ func TestConfigFileWithFlags(t *testing.T) {
 		LogLevel:      "info",
 		ListenAddress: "127.0.0.1",
 		ListenPort:    8080,
-		IPCFile:       "/somewhere",
+		IPC:           "/somewhere",
 		PKIDir:        "/tmp/pki",
 		TLS: struct {
 			Enabled     bool
